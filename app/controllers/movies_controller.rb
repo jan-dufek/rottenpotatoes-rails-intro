@@ -11,18 +11,20 @@ class MoviesController < ApplicationController
   end
 
   def index
-    # get the name of the column according to which we want to sort
+    # get the name of the column by which to order
     sort_by = params[:sort_by]
 
-    # if no column is given, do default sorting, else sort according to that column
+    # if no column is given, do default ordering, else order by that column
     if sort_by.nil? then
+      # default ordering
       @movies = Movie.all
     else
+      # order by selected column
       @movies = Movie.order("movies.#{sort_by} ASC").all
-    end
 
-    # hilite particular column
-    instance_variable_set('@css_' + sort_by, 'hilite')
+      # hilite particular column
+      instance_variable_set('@css_' + sort_by, 'hilite')
+    end
   end
 
   def new
