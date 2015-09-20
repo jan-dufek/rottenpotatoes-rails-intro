@@ -11,20 +11,35 @@ class MoviesController < ApplicationController
   end
 
   def index
+    # get all possible movie ratings
+    @all_ratings = get_ratings
+
+    # get selected ratings
+    ratings = params[:ratings]
+
+    # if no rating is selected, display all ratings, else display only those ratings selected
+    if (ratings.nil?) then
+      @selected_ratings = @all_ratings
+    else
+      @selected_ratings = ratings.keys
+    end
+
+
     # get the name of the column by which to order
     sort_by = params[:sort_by]
 
     # if no column is given, do default ordering, else order by that column
     if sort_by.nil? then
       # default ordering
-      @movies = Movie.all
-    else
-      # order by selected column
-      @movies = Movie.order("movies.#{sort_by} ASC").all
-
-      # hilite particular column
-      instance_variable_set('@css_' + sort_by, 'hilite')
+      sort_by = "id"
     end
+
+    # order by selected column
+    @movies = Movie.where(:rating => @selected_ratings).order("movies.#{sort_by} ASC")
+
+    # hilite particular column
+    instance_variable_set('@css_' + sort_by, 'hilite')
+
   end
 
   def new
@@ -55,4 +70,9 @@ class MoviesController < ApplicationController
     redirect_to movies_path
   end
 
+  private
+  def get_ratings
+    # unique ratings from the Movie model
+    Movie.uniq.pluck(:rating)
+  end
 end
