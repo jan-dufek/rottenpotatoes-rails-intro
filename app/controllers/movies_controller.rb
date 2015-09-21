@@ -11,35 +11,85 @@ class MoviesController < ApplicationController
   end
 
   def index
+    ##########
+    # Ratings
+    ##########
+
     # get all possible movie ratings
     @all_ratings = get_ratings
 
-    # get selected ratings
-    ratings = params[:ratings]
+    # by default do not redirect
+    redirect = false
 
-    # if no rating is selected, display all ratings, else display only those ratings selected
-    if (ratings.nil?) then
+    # get requested ratings
+    if !params[:ratings].nil? then # rating is given in parameters
+      # use rating from parameters
+      @selected_ratings = params[:ratings]
+
+      # if it is a hash, take only keys (we do not need the rest)
+      if @selected_ratings.is_a?(Hash) then
+        @selected_ratings = @selected_ratings.keys
+      end
+    elsif !session[:ratings].nil? then # rating is given in session
+      # load rating from session
+      @selected_ratings = session[:ratings]
+
+      # redirect to show ratings in the address
+      redirect = true
+    else # no rating given
+      # use default rating (show all ratings)
       @selected_ratings = @all_ratings
-    else
-      @selected_ratings = ratings.keys
+
+      # redirect to show ratings in the address
+      redirect = true
     end
 
+    # save current ratings setting to session
+    session[:ratings] = @selected_ratings
+
+    ##########
+    # Sort by
+    ##########
 
     # get the name of the column by which to order
-    sort_by = params[:sort_by]
+    if  !params[:sort_by].nil? then # sort by is given in parameters
+      # use sort by from parameters
+      sort_by = params[:sort_by]
+    elsif !session[:sort_by].nil? then # sort by is given in session
+      # load sort by from session
+      sort_by = session[:sort_by]
 
-    # if no column is given, do default ordering, else order by that column
-    if sort_by.nil? then
-      # default ordering
-      sort_by = "id"
+      # redirect to show ratings in the address
+      redirect = true
+    else # no sort by is given
+      # use default sort by (sort by id)
+      sort_by = 'id'
+
+      # redirect to show ratings in the address
+      redirect = true
     end
 
-    # order by selected column
+    # save current sort by setting to session
+    session[:sort_by] = sort_by
+
+    ##########################
+    # Redirect, model, hilite
+    ##########################
+
+    # redirect if necessary
+    if redirect then
+      # save flash
+      flash.keep
+
+      # redirect to preserve REST
+      redirect_to movies_path({ :sort_by => sort_by, :ratings => @selected_ratings})
+    end
+
+    # get movies with given ratings and sort them using given sort by
     @movies = Movie.where(:rating => @selected_ratings).order("movies.#{sort_by} ASC")
 
     # hilite particular column
     instance_variable_set('@css_' + sort_by, 'hilite')
-
   end
 
   def new
